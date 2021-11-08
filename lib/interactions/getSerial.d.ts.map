@@ -1,0 +1,1 @@
+{"version":3,"file":"getSerial.d.ts","sourceRoot":"","sources":["../../src/interactions/getSerial.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAC,MAAM,EAAE,OAAO,EAAC,MAAM,iBAAiB,CAAA;AAGpD,OAAO,KAAK,EAAC,WAAW,EAAa,MAAM,gBAAgB,CAAA;AAW3D,wBAAiB,SAAS,CAAC,OAAO,EAAE,OAAO,GAAG,WAAW,CAAC,MAAM,CAAC,CAchE"}
