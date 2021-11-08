@@ -2,7 +2,8 @@
   "name": "ledgerjs-hw-app-fio",
   "version": "0.0.1",
   "files": [
-    "dist"
+    "lib",
+    "src"
   ],
   "types": "./dist/fio.d.ts",
   "description": "Ledger Hardware Wallet FIO API",
