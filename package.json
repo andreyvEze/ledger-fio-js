@@ -6,7 +6,10 @@
   ],
   "types": "./dist/fio.d.ts",
   "description": "Ledger Hardware Wallet FIO API",
-  "main": "dist/fio.js",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
   "keywords": [
     "Ledger",
     "LedgerWallet",
