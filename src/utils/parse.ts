@@ -1,21 +1,16 @@
-import  {InvalidData, InvalidDataReason} from "../errors"
-import type {
-    _Uint64_bigint,
-    _Uint64_num,
-    FixlenHexString,
-    HexString,
-    NameString,
-    ParsedActionAuthorisation,
-    ParsedTransaction,
-    Uint8_t,
-    Uint16_t,
-    Uint32_t,
-    Uint64_str,
-    ValidBIP32Path,
-    VarlenAsciiString,
-} from "../types/internal"
-import type {ParsedAction, ParsedTransferFIOTokensData} from "../types/internal"
-import type {ActionAuthorisation, bigint_like, Transaction} from "../types/public"
+import { InvalidData, InvalidDataReason } from "../errors"
+import {_Uint64_bigint, _Uint64_num, FixlenHexString, HexString, NameString, ParsedActionAuthorisation, ParsedTransaction,
+    Uint8_t, Uint16_t, Uint32_t, Uint64_str, ValidBIP32Path, VarlenAsciiString, ParsedAction, ParsedActionData, Base64String, ParsedContext } from "../types/internal"
+import type {ActionAuthorisation, bigint_like, Transaction, TransferFIOTokensData, RequestFundsData, RecordOtherBlockchainTransactionMetadata, 
+    MapBlockchainPublicAddress, RemoveMappedAddress, MapNFTSignature, RemoveNFTSignature, RemoveAllMappedAddresses, CancelFundsRequest, 
+    RejectFundsRequest, BuyBundledTransaction, RegisterAddress, TransferAddress, RegisterDomain, RenewDomain, MakeDomainPublic, 
+    TransferDomain, RemoveAllNFT, StakeFIO, UnstakeFIO, VoteOnBlockProducers, ProxyVotesToRegisteredProxy} from "../types/public"
+import { parseActionDataRecordOtherBlockchainTransactionMetadata, parseActionDataRequestFunds, parseActionDataTransferFIOToken, 
+    parseBuyBundledTransaction, parseCancelRequestFunds, parseMakeDomainPublic, parseMapBlockchainPublicAddress, parseMapNFTSignature, 
+    parseProxyVotesToRegisteredProxy, 
+    parseRegisterAddress, parseRegisterDomain, parseRejectRequestFunds, parseRemoveAllMappedAddresses, parseRemoveAllNFT, 
+    parseRemoveMappedAddress, parseRemoveNFTSignature, parseRenewDomain, parseStakeFIO, parseTransferAddress, 
+    parseTransferDomain, parseUnstakeFIO, parseVoteOnBlockProducers } from "./parseTxActions"
 
 export const MAX_UINT_64_STR = "18446744073709551615"
 
@@ -52,6 +47,9 @@ export const isHexString = (data: unknown): data is HexString =>
 
 export const isHexStringOfLength = <L extends number>(data: unknown, expectedByteLength: L): data is FixlenHexString<L> =>
     isHexString(data) && data.length === expectedByteLength * 2
+
+export const isBase64String = (data: unknown): data is Base64String =>
+    isString(data) && /^([0-9a-zA-Z+/]{4})*(([0-9a-zA-Z+/]{2}==)|([0-9a-zA-Z+/]{3}=))?$/.test(data)
 
 export const isValidPath = (data: unknown): data is ValidBIP32Path =>
     isArray(data) && data.every(x => isUint32(x)) && data.length <= 5
@@ -99,8 +97,9 @@ export function validate(cond: boolean, errMsg: InvalidDataReason): asserts cond
 }
 
 
-export function parseAscii(str: unknown, errMsg: InvalidDataReason): VarlenAsciiString {
+export function parseAscii(str: unknown, errMsg: InvalidDataReason, minLen: number=0, maxLen: number=Number.MAX_SAFE_INTEGER): VarlenAsciiString {
     validate(isString(str), errMsg)
+    validate(minLen <= str.length && str.length <= maxLen, errMsg)
     validate(
         str.split("").every((c) => c.charCodeAt(0) >= 32 && c.charCodeAt(0) <= 126),
         errMsg,
@@ -109,8 +108,9 @@ export function parseAscii(str: unknown, errMsg: InvalidDataReason): VarlenAscii
 }
 
 
-export function parseHexString(str: unknown, errMsg: InvalidDataReason): HexString {
+export function parseHexString(str: unknown, errMsg: InvalidDataReason, minLen: number=0, maxLen: number=Number.MAX_SAFE_INTEGER): HexString {
     validate(isHexString(str), errMsg)
+    validate(minLen <= str.length*2 && str.length <= maxLen*2, errMsg)
     return str
 }
 
@@ -150,6 +150,16 @@ export function parseUint8_t(value: number, errMsg: InvalidDataReason): Uint8_t 
     return value
 }
 
+export function parseBoolean(value: unknown, errMsg: InvalidDataReason): boolean {
+    if (value == 0) {
+        return false;
+    }
+    if (value == 1) {
+        return true;
+    }
+    validate(false, errMsg)
+}
+
 export function parseBIP32Path(value: unknown, errMsg: InvalidDataReason): ValidBIP32Path {
     validate(isValidPath(value), errMsg)
     return value
@@ -165,13 +175,6 @@ export function parseIntFromStr(str: string, errMsg: InvalidDataReason): number 
     // Could still be float
     validate(isInteger(i), errMsg)
     return i
-}
-
-export function parseContractAccountName(account: string, name: string, errMsg: InvalidDataReason): HexString {
-    if (account == "fio.token" && name == "trnsfiopubky") {
-        return "0000980ad20ca85be0e1d195ba85e7cd" as HexString
-    }
-    validate(false, errMsg)
 }
 
 export function parseNameString(name: string, errMsg: InvalidDataReason): NameString {
@@ -215,46 +218,95 @@ export function parseAuthorization(authorization: ActionAuthorisation, errMsg: I
 export function parseTransaction(chainId: string, tx: Transaction): ParsedTransaction {
     // validate tx (Transaction)
     validate(isString(tx.expiration), InvalidDataReason.INVALID_EXPIRATION)
-    validate(isBigIntLike(tx.ref_block_num), InvalidDataReason.INVALID_REF_BLOCK_NUM)
-    validate(isBigIntLike(tx.ref_block_prefix), InvalidDataReason.INVALID_REF_BLOCK_PREFIX)
     validate(tx.context_free_actions.length == 0, InvalidDataReason.CONTEXT_FREE_ACTIONS_NOT_SUPPORTED)
-
     validate(tx.actions.length == 1, InvalidDataReason.MULTIPLE_ACTIONS_NOT_SUPPORTED)
-    const action = tx.actions[0]
 
+    const action = tx.actions[0]
     // validate action
     validate(isString(action.account), InvalidDataReason.INVALID_ACCOUNT)
     validate(isString(action.name), InvalidDataReason.INVALID_NAME)
-
     validate(action.authorization.length == 1, InvalidDataReason.MULTIPLE_AUTHORIZATION_NOT_SUPPORTED)
     const authorization = action.authorization[0]
 
-    // validate authorization
-    validate(isString(authorization.actor), InvalidDataReason.INVALID_ACTOR)
-    validate(isString(authorization.permission), InvalidDataReason.INVALID_PERMISSION)
+    let parsedActionData: ParsedActionData | null = null
 
-    // validate action.data (TransferFIOTokenData)
-    validate(isString(action.data.payee_public_key), InvalidDataReason.INVALID_PAYEE_PUBKEY)
-    validate(action.data.payee_public_key.length <= 64, InvalidDataReason.INVALID_PAYEE_PUBKEY) 
-    validate(isBigIntLike(action.data.amount), InvalidDataReason.INVALID_AMOUNT)
-    validate(isBigIntLike(action.data.max_fee), InvalidDataReason.INVALID_MAX_FEE)
-    validate(isString(action.data.tpid), InvalidDataReason.INVALID_TPID)
-    validate(action.data.tpid.length <= 20, InvalidDataReason.INVALID_TPID) 
-    validate(isString(action.data.actor), InvalidDataReason.INVALID_ACTOR)
+    if (action.account == "fio.token" && action.name == "trnsfiopubky") {
+        parsedActionData = parseActionDataTransferFIOToken(action.data as TransferFIOTokensData)
+    }
+    else if (action.account === "fio.reqobt" && action.name === "newfundsreq") {
+        parsedActionData = parseActionDataRequestFunds(action.data as RequestFundsData)
+    }
+    else if (action.account === "fio.reqobt" && action.name === "recordobt") {
+        parsedActionData = parseActionDataRecordOtherBlockchainTransactionMetadata(action.data as RecordOtherBlockchainTransactionMetadata)
+    }
+    else if (action.account === "fio.address" && action.name === "addaddress") {
+        parsedActionData = parseMapBlockchainPublicAddress(action.data as MapBlockchainPublicAddress)
+    }
+    else if (action.account === "fio.address" && action.name === "remaddress") {
+        parsedActionData = parseRemoveMappedAddress(action.data as RemoveMappedAddress)
+    }
+    else if (action.account === "fio.address" && action.name === "addnft") {
+        parsedActionData = parseMapNFTSignature(action.data as MapNFTSignature)
+    }
+    else if (action.account === "fio.address" && action.name === "remnft") {
+        parsedActionData = parseRemoveNFTSignature(action.data as RemoveNFTSignature)
+    }
+    else if (action.account === "fio.address" && action.name === "remalladdr") {
+        parsedActionData = parseRemoveAllMappedAddresses(action.data as RemoveAllMappedAddresses)
+    }
+    else if (action.account === "fio.reqobt" && action.name === "cancelfndreq") {
+        parsedActionData = parseCancelRequestFunds(action.data as CancelFundsRequest)
+    }
+    else if (action.account === "fio.reqobt" && action.name === "rejectfndreq") {
+        parsedActionData = parseRejectRequestFunds(action.data as RejectFundsRequest)
+    }
+    else if (action.account === "fio.address" && action.name === "addbundles") {
+        parsedActionData = parseBuyBundledTransaction(action.data as BuyBundledTransaction)
+    }
+    else if (action.account === "fio.address" && action.name === "regaddress") {
+        parsedActionData = parseRegisterAddress(action.data as RegisterAddress)
+    }
+    else if (action.account === "fio.address" && action.name === "xferaddress") {
+        parsedActionData = parseTransferAddress(action.data as TransferAddress)
+    }
+    else if (action.account === "fio.address" && action.name === "regdomain") {
+        parsedActionData = parseRegisterDomain(action.data as RegisterDomain)
+    }
+    else if (action.account === "fio.address" && action.name === "renewdomain") {
+        parsedActionData = parseRenewDomain(action.data as RenewDomain)
+    }
+    else if (action.account === "fio.address" && action.name === "setdomainpub") {
+        parsedActionData = parseMakeDomainPublic(action.data as MakeDomainPublic)
+    }
+    else if (action.account === "fio.address" && action.name === "xferdomain") {
+        parsedActionData = parseTransferDomain(action.data as TransferDomain)
+    }
+    else if (action.account === "fio.address" && action.name === "remallnfts") {
+        parsedActionData = parseRemoveAllNFT(action.data as RemoveAllNFT)
+    }
+    else if (action.account === "fio.staking" && action.name === "stakefio") {
+        parsedActionData = parseStakeFIO(action.data as StakeFIO)
+    }
+    else if (action.account === "fio.staking" && action.name === "unstakefio") {
+        parsedActionData = parseUnstakeFIO(action.data as UnstakeFIO)
+    }
+    else if (action.account === "eosio" && action.name === "voteproducer") {
+        parsedActionData = parseVoteOnBlockProducers(action.data as VoteOnBlockProducers)
+    }
+    else if (action.account === "eosio" && action.name === "voteproxy") {
+        parsedActionData = parseProxyVotesToRegisteredProxy(action.data as ProxyVotesToRegisteredProxy)
+    }
 
-    const parsedActionData: ParsedTransferFIOTokensData = {
-        payee_public_key: action.data.payee_public_key,
-        amount: parseUint64_str(action.data.amount, {}, InvalidDataReason.INVALID_AMOUNT),
-        max_fee: parseUint64_str(action.data.max_fee, {}, InvalidDataReason.INVALID_MAX_FEE),
-        actor: parseNameString(action.data.actor, InvalidDataReason.INVALID_ACTOR),
-        tpid: action.data.tpid,
+    //manual validate so that automatic tools are OK wit conversion that follows
+    if(parsedActionData == null) {
+        throw new InvalidData(InvalidDataReason.ACTION_NOT_SUPPORTED) 
     }
 
     const parsedAction: ParsedAction = {
-        contractAccountName: parseContractAccountName(action.account, action.name,
-            InvalidDataReason.ACTION_NOT_SUPPORTED),
+        account: parseNameString(action.account, InvalidDataReason.INVALID_ACCOUNT),
+        name: parseNameString(action.name, InvalidDataReason.INVALID_NAME),
         authorization: [parseAuthorization(authorization, InvalidDataReason.INVALID_ACTION_AUTHORIZATION)],
-        data: parsedActionData,
+        data: parsedActionData as ParsedActionData,
     }
 
     return {
@@ -264,5 +316,24 @@ export function parseTransaction(chainId: string, tx: Transaction): ParsedTransa
         context_free_actions: [],
         actions: [parsedAction],
         transaction_extensions: null,
+    }    
+
+    throw new InvalidData(InvalidDataReason.ACTION_NOT_SUPPORTED)
+}
+
+export function parseMessage(message: string, reason: InvalidDataReason): HexString {
+    validate(isBase64String(message), reason);
+    validate(message.length <= 432, reason); //max message length
+    return Buffer.from(message, "base64").toString("hex") as HexString;
+}
+
+export function parseContext(context: string, reason: InvalidDataReason): ParsedContext {
+    if (context === "newfundsreq") {
+        return ParsedContext.NEWFUNDSREQ
     }
+    if (context === "recordobt") {
+        return ParsedContext.RECORDOT
+    }
+
+    validate(false, reason)
 }

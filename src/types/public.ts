@@ -1,3 +1,5 @@
+import fiojs from "@fioprotocol/fiojs"
+import { PublicKeyInput } from "crypto"
 /**
  * Type for 64-bit integers.
  *
@@ -117,9 +119,13 @@ export type Witness = {
  */
 export type SignedTransactionData = {
     /**
+     * If the transaction involves DH encryption, the data is here (base64 encoding), otherwise, this string is empty
+     */
+     dhEncryptedData: string
+    /**
      * Hash of signed transaction. Callers should check that they serialize tx the same way
      */
-    txHashHex: string
+     txHashHex: string
     /**
      * List of witnesses. Caller should assemble full transaction to be submitted to the network.
      */
@@ -138,7 +144,339 @@ export type TransferFIOTokensData = {
     max_fee: bigint_like
     tpid: string
     actor: string
+}
 
+/**
+ * Represents Request Funds newfundsreq data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type RequestFundsData = {
+    payer_fio_address: string
+    payee_fio_address: string
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+
+    /**
+     * Payee public key - needed for DH encryprion. In uncomressed format as hex string.
+     */
+    payee_public_key: string
+    //content
+    payee_public_address: string
+    amount: string
+    chain_code: string
+    token_code: string
+    memo?: string
+    hash?: string
+    offline_url?: string
+}
+
+/**
+ * Represents Record Other Blockchain Transaction Metadata recordobt data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type RecordOtherBlockchainTransactionMetadata = {
+    fio_request_id: string
+    payer_fio_address: string
+    payee_fio_address: string
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+
+    /**
+     * Payee public key - needed for DH encryprion. In uncomressed format as hex string.
+     */
+    payee_public_key: string
+    //content
+    payee_public_address: string
+    payer_public_address: string
+    amount: string
+    chain_code: string
+    token_code: string
+    status: string
+    obt_id: string
+    memo?: string
+    hash?: string
+    offline_url?: string
+}
+
+/**
+ * Represents Public addresses .
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type PublicAddress = {
+    chain_code: string
+    token_code: string
+    public_address: string
+ }
+
+/**
+ * Represents Map blockchain public address data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type MapBlockchainPublicAddress = {
+    fio_address: string
+    public_addresses: Array<PublicAddress>
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Represents Remove mapped address data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type RemoveMappedAddress = {
+    fio_address: string
+    public_addresses: Array<PublicAddress>
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Represents NFT for addnft.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type NFT = {
+    chain_code: string
+    contract_address: string
+    token_id: string
+    url: string
+    hash: string
+    metadata: string
+ }
+
+ /**
+ * Represents NFT for remnft.
+ * @category Basic types
+ * @see [[Action]]
+ */
+  export type SmallNFT = {
+    chain_code: string
+    contract_address: string
+    token_id: string
+ }
+
+ /**
+ * Represents Map NFT Signature to a FIO Crypto Handle data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type MapNFTSignature = {
+    fio_address: string
+    nfts: Array<NFT>
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Remove NFT Signature from FIO Crypto Handle data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type RemoveNFTSignature = {
+    fio_address: string
+    nfts: Array<SmallNFT>
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Remove all mapped addresses data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type RemoveAllMappedAddresses = {
+    fio_address: string
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Cancel Funds Request data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type CancelFundsRequest = {
+    fio_request_id: string
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Reject Funds Request data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type RejectFundsRequest = {
+    fio_request_id: string
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Buy bundled ransaction data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type BuyBundledTransaction = {
+    fio_address: string
+    bundle_sets: bigint_like
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Register address data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type RegisterAddress = {
+    fio_address: string
+    owner_fio_public_key: string
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Transfer address data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type TransferAddress = {
+    fio_address: string
+    new_owner_fio_public_key: string
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Register domain data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type RegisterDomain = {
+    fio_domain: string
+    owner_fio_public_key: string
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Renew domain data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type RenewDomain = {
+    fio_domain: string
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Make domain public data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type MakeDomainPublic = {
+    fio_domain: string
+    is_public: bigint_like
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+
+/**
+ * Transfer domain data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type TransferDomain = {
+    fio_domain: string
+    new_owner_fio_public_key: string
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * RemoveAllNFT data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type RemoveAllNFT = {
+    fio_address: string
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Stake fio data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type StakeFIO = {
+    amount: bigint_like
+    fio_address: string
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Unstake fio data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type UnstakeFIO = {
+    amount: bigint_like
+    fio_address: string
+    max_fee: bigint_like
+    actor: string
+    tpid: string
+}
+
+/**
+ * Vote on block producers data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type VoteOnBlockProducers = {
+    producers: Array<string>
+    fio_address: string
+    max_fee: bigint_like
+    actor: string
+}
+
+/**
+ * Proxy votes to registred proxy data.
+ * @category Basic types
+ * @see [[Action]]
+ */
+ export type ProxyVotesToRegisteredProxy = {
+    proxy: string
+    fio_address: string
+    max_fee: bigint_like
+    actor: string
 }
 
 /**
@@ -161,7 +499,29 @@ export type Action = {
     account: string
     name: string
     authorization: Array<ActionAuthorisation>
-    data: | TransferFIOTokensData
+    data: 
+        TransferFIOTokensData | 
+        RequestFundsData | 
+        RecordOtherBlockchainTransactionMetadata |
+        MapBlockchainPublicAddress |
+        RemoveMappedAddress |
+        MapNFTSignature |
+        RemoveNFTSignature |
+        RemoveAllMappedAddresses |
+        CancelFundsRequest |
+        RejectFundsRequest |
+        BuyBundledTransaction |
+        RegisterAddress |
+        TransferAddress |
+        RegisterDomain |
+        RenewDomain |
+        MakeDomainPublic |
+        TransferDomain |
+        RemoveAllNFT |
+        StakeFIO |
+        UnstakeFIO |
+        VoteOnBlockProducers |
+        ProxyVotesToRegisteredProxy
 }
 
 

@@ -6,11 +6,13 @@ import {ErrorBase} from "./errorBase"
  */
 export const DeviceStatusCodes = {
     ERR_STILL_IN_CALL: 0x6e04 as const, // internal
+    ERR_INVALID_STATE: 0x6e06 as const,
     ERR_INVALID_DATA: 0x6e07 as const,
+    ERR_INTEGRITY_CHECK_FAILED: 0x6e08 as const,
     ERR_REJECTED_BY_USER: 0x6e09 as const,
     ERR_REJECTED_BY_POLICY: 0x6e10 as const,
     ERR_DEVICE_LOCKED: 0x6e11 as const,
-    ERR_UNSUPPORTED_ADDRESS_TYPE: 0x6e12 as const,
+    ERR_INVALID_HMAC: 0x6e12 as const,
 
     // Not thrown by ledger-app-fio itself but other apps
     ERR_CLA_NOT_SUPPORTED: 0x6e00 as const,
@@ -18,17 +20,19 @@ export const DeviceStatusCodes = {
 
 // Human-readable version of errors reported by APDU protocol
 const DeviceStatusMessages: Record<number, string> = {
+    [DeviceStatusCodes.ERR_INVALID_STATE]: "Ledger device reached invalid state",
     [DeviceStatusCodes.ERR_INVALID_DATA]: "Invalid data supplied to Ledger",
+    [DeviceStatusCodes.ERR_INTEGRITY_CHECK_FAILED]: "Failed command sequence integrity check",
     [DeviceStatusCodes.ERR_REJECTED_BY_USER]: "Action rejected by user",
     [DeviceStatusCodes.ERR_REJECTED_BY_POLICY]:
         "Action rejected by Ledger's security policy",
     [DeviceStatusCodes.ERR_DEVICE_LOCKED]: "Device is locked",
     [DeviceStatusCodes.ERR_CLA_NOT_SUPPORTED]: "Wrong Ledger app",
-    [DeviceStatusCodes.ERR_UNSUPPORTED_ADDRESS_TYPE]: "Unsupported address type",
+    [DeviceStatusCodes.ERR_INVALID_HMAC]: "Invalid HMAC",
 }
 
 const GH_DEVICE_ERRORS_LINK =
-    "https://github.com/vacuumlabs/ledger-fio/blob/master/ledger-app-fio/src/errors.h"
+    "https://github.com/LedgerHQ/ledger-fio/blob/master/src/errors.h"
 
 const getDeviceErrorDescription = (statusCode: number) => {
     const statusCodeHex = `0x${statusCode.toString(16)}`
