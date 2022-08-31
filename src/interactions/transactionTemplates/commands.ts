@@ -1,4 +1,3 @@
-import { assert } from "console";
 import { InvalidDataReason } from "../../errors"
 import { HexString, Uint8_t, ParsedTransaction, ValidBIP32Path, VarlenAsciiString } from "types/internal"
 import { buf_to_hex, path_to_buf, uint8_to_buf, varuint32_to_buf } from "../../utils/serialize";
@@ -70,7 +69,7 @@ export type Command = {
     constData: HexString,
     varData: Buffer,
     expectedResponseLength?: number,
-    dataAction: DataAction, 
+    dataAction: DataAction,
     txLen: number, //This is necessary to make counted sections work
 }
 
@@ -164,7 +163,7 @@ export function COMMAND_INIT(chainId: HexString, parsedPath: ValidBIP32Path): Co
 export function COMMAND_APPEND_CONST_DATA(constData: HexString): Command {
     return {
         ...defaultCommand,
-        command: COMMAND.APPEND_CONST_DATA, 
+        command: COMMAND.APPEND_CONST_DATA,
         constData: constData,
         txLen: Buffer.from(constData, "hex").length,
     }
@@ -173,7 +172,7 @@ export function COMMAND_APPEND_CONST_DATA(constData: HexString): Command {
 export function COMMAND_SHOW_MESSAGE(key: string, value: string): Command {
     return {
         ...defaultCommand,
-        command: COMMAND.SHOW_MESSAGE, 
+        command: COMMAND.SHOW_MESSAGE,
         constData: constDataShowMessage(
             key,
             value
@@ -184,7 +183,7 @@ export function COMMAND_SHOW_MESSAGE(key: string, value: string): Command {
 export function COMMAND_APPEND_DATA_BUFFER_DO_NOT_SHOW(varData: Buffer, bufLenMin: number = 0, bufLenMax: number = 0xFFFFFFFF): Command {
     return {
         ...defaultCommand,
-        command: COMMAND.APPEND_DATA, 
+        command: COMMAND.APPEND_DATA,
         constData: constDataAppendData(
             VALUE_FORMAT.VALUE_FORMAT_BUFFER_SHOW_AS_HEX,
             VALUE_VALIDATION.VALUE_VALIDATION_INBUFFER_LENGTH, BigInt(bufLenMin), BigInt(bufLenMax),
@@ -200,7 +199,7 @@ export function COMMAND_APPEND_DATA_BUFFER_DO_NOT_SHOW(varData: Buffer, bufLenMi
 export function COMMAND_APPEND_DATA_STRING_DO_NOT_SHOW(varData: Buffer, bufLenMin: number = 0, bufLenMax: number = 0xFFFFFFFF): Command {
     return {
         ...defaultCommand,
-        command: COMMAND.APPEND_DATA, 
+        command: COMMAND.APPEND_DATA,
         constData: constDataAppendData(
             VALUE_FORMAT.VALUE_FORMAT_ASCII_STRING,
             VALUE_VALIDATION.VALUE_VALIDATION_INBUFFER_LENGTH, BigInt(bufLenMin), BigInt(bufLenMax),
@@ -216,7 +215,7 @@ export function COMMAND_APPEND_DATA_STRING_DO_NOT_SHOW(varData: Buffer, bufLenMi
 export function COMMAND_APPEND_DATA_STRING_SHOW(key: string, varData: Buffer, bufLenMin: number = 0, bufLenMax: number = 0xFFFFFFFF): Command {
     return {
         ...defaultCommand,
-        command: COMMAND.APPEND_DATA, 
+        command: COMMAND.APPEND_DATA,
         constData: constDataAppendData(
             VALUE_FORMAT.VALUE_FORMAT_ASCII_STRING,
             VALUE_VALIDATION.VALUE_VALIDATION_INBUFFER_LENGTH, BigInt(bufLenMin), BigInt(bufLenMax),
@@ -226,7 +225,7 @@ export function COMMAND_APPEND_DATA_STRING_SHOW(key: string, varData: Buffer, bu
         ),
         varData: varData,
         txLen: varData.length,
-    }  
+    }
 }
 
 //calculates the length of varint
@@ -238,7 +237,7 @@ export function COMMAND_APPEND_DATA_STRING_WITH_LENGTH_DO_NOT_SHOW(varData: Buff
     const vD = Buffer.concat([varuint32_to_buf(varData.length), varData]);
     return {
         ...defaultCommand,
-        command: COMMAND.APPEND_DATA, 
+        command: COMMAND.APPEND_DATA,
         constData: constDataAppendData(
             VALUE_FORMAT.VALUE_FORMAT_ASCII_STRING_WITH_LENGTH,
             VALUE_VALIDATION.VALUE_VALIDATION_INBUFFER_LENGTH, BigInt(bufLenMin + lenlen(bufLenMin)), BigInt(bufLenMax + lenlen(bufLenMax)),
@@ -255,7 +254,7 @@ export function COMMAND_APPEND_DATA_STRING_WITH_LENGTH_SHOW(key: string, varData
     const vD = Buffer.concat([varuint32_to_buf(varData.length), varData]);
     return {
         ...defaultCommand,
-        command: COMMAND.APPEND_DATA, 
+        command: COMMAND.APPEND_DATA,
         constData: constDataAppendData(
             VALUE_FORMAT.VALUE_FORMAT_ASCII_STRING_WITH_LENGTH,
             VALUE_VALIDATION.VALUE_VALIDATION_INBUFFER_LENGTH, BigInt(bufLenMin + lenlen(bufLenMin)), BigInt(bufLenMax + lenlen(bufLenMax)),
@@ -265,13 +264,13 @@ export function COMMAND_APPEND_DATA_STRING_WITH_LENGTH_SHOW(key: string, varData
         ),
         varData: vD,
         txLen: vD.length,
-    }  
+    }
 }
 
 export function COMMAND_APPEND_DATA_NAME_SHOW(key: string, name: HexString): Command {
     return {
         ...defaultCommand,
-        command: COMMAND.APPEND_DATA, 
+        command: COMMAND.APPEND_DATA,
         constData: constDataAppendData(
             VALUE_FORMAT.VALUE_FORMAT_NAME,
             VALUE_VALIDATION.VALUE_VALIDATION_NONE, BigInt(0), BigInt(0),
@@ -281,13 +280,13 @@ export function COMMAND_APPEND_DATA_NAME_SHOW(key: string, name: HexString): Com
         ),
         varData: Buffer.from(name, "hex"),
         txLen: Buffer.from(name, "hex").length,
-    }  
+    }
 }
 
 export function COMMAND_APPEND_DATA_FIO_AMOUNT_SHOW(key: string, varData: Buffer, minAmount: number = 0, maxAmount: number = 0xFFFFFFFF): Command {
     return {
         ...defaultCommand,
-        command: COMMAND.APPEND_DATA, 
+        command: COMMAND.APPEND_DATA,
         constData: constDataAppendData(
             VALUE_FORMAT.VALUE_FORMAT_FIO_AMOUNT,
             VALUE_VALIDATION.VALUE_VALIDATION_NUMBER, BigInt(minAmount), BigInt(maxAmount),
@@ -297,13 +296,13 @@ export function COMMAND_APPEND_DATA_FIO_AMOUNT_SHOW(key: string, varData: Buffer
         ),
         varData: varData,
         txLen: varData.length,
-    }  
+    }
 }
 
 export function COMMAND_APPEND_DATA_UINT64_SHOW(key: string, varData: Buffer, minAmount: number = 0, maxAmount: number = 0xFFFFFFFF): Command {
     return {
         ...defaultCommand,
-        command: COMMAND.APPEND_DATA, 
+        command: COMMAND.APPEND_DATA,
         constData: constDataAppendData(
             VALUE_FORMAT.VALUE_FORMAT_UINT64,
             VALUE_VALIDATION.VALUE_VALIDATION_NUMBER, BigInt(minAmount), BigInt(maxAmount),
@@ -313,7 +312,7 @@ export function COMMAND_APPEND_DATA_UINT64_SHOW(key: string, varData: Buffer, mi
         ),
         varData: varData,
         txLen: varData.length,
-    }  
+    }
 }
 
 
@@ -322,7 +321,7 @@ export function COMMANDS_COUNTED_SECTION(commands: Array<Command>, min: number =
     return [
         {
             ...defaultCommand,
-            command: COMMAND.START_COUNTED_SECTION, 
+            command: COMMAND.START_COUNTED_SECTION,
             constData: constDataStartCountedSection(
                 VALUE_FORMAT.VALUE_FORMAT_VARUINT32, VALUE_VALIDATION.VALUE_VALIDATION_NUMBER, BigInt(min), BigInt(max),
             ),
@@ -340,8 +339,8 @@ export function COMMANDS_COUNTED_SECTION(commands: Array<Command>, min: number =
 export function COMMAND_STORE_VALUE(register: Uint8_t, varData: Buffer): Command {
     return {
         ...defaultCommand,
-        command: COMMAND.STORE_VALUE, 
-        p2: register as Uint8_t, 
+        command: COMMAND.STORE_VALUE,
+        p2: register as Uint8_t,
         varData: varData,
     }
 }
@@ -360,19 +359,19 @@ export function COMMANDS_DH_ENCODE(other_public_key: Buffer, commands: Array<Com
             ...defaultCommand,
             command: COMMAND.END_DH_ENCRYPTION,
             txLen: 0, //getCommandVarLength includes the output by default
-        }    
+        }
     ]
 }
 
 export function COMMAND_FINISH(parsedPath: ValidBIP32Path): Command {
     return {
         ...defaultCommand,
-        command: COMMAND.FINISH, 
+        command: COMMAND.FINISH,
         expectedResponseLength: 65 + 32,
         dataAction: (b, s) => {
             const [witnessSignature, hash, rest] = chunkBy(b, [65, 32])
-            assert(rest.length === 0, "invalid response length")
-        
+            console.assert(rest.length === 0, "invalid response length")
+
             return {
                 dhEncryptedData: s.dhEncryptedData,
                 txHashHex: buf_to_hex(hash),
@@ -381,7 +380,7 @@ export function COMMAND_FINISH(parsedPath: ValidBIP32Path): Command {
                     witnessSignatureHex: buf_to_hex(witnessSignature),
                 },
             }
-        
+
         },
     }
 }
@@ -403,7 +402,7 @@ export function COMMAND_APPEND_DATA_MEMO_HASH(memo?: VarlenAsciiString, hash?: V
         validate(hash !== undefined, InvalidDataReason.INVALID_HASH);
         validate(offline_url !== undefined, InvalidDataReason.INVALID_OFFLINE_URL);
         varData = Buffer.concat([
-            Buffer.from("0001", "hex"), 
+            Buffer.from("0001", "hex"),
             varuint32_to_buf(hash.length),
             Buffer.from(hash),
             Buffer.from("01", "hex"),
@@ -415,7 +414,7 @@ export function COMMAND_APPEND_DATA_MEMO_HASH(memo?: VarlenAsciiString, hash?: V
         validate(hash === undefined, InvalidDataReason.INVALID_HASH);
         validate(hash === undefined, InvalidDataReason.INVALID_OFFLINE_URL);
         varData = Buffer.concat([
-            Buffer.from("01", "hex"), 
+            Buffer.from("01", "hex"),
             varuint32_to_buf(memo.length),
             Buffer.from(memo),
             Buffer.from("0000", "hex"),
@@ -423,7 +422,7 @@ export function COMMAND_APPEND_DATA_MEMO_HASH(memo?: VarlenAsciiString, hash?: V
     }
     return {
         ...defaultCommand,
-        command: COMMAND.APPEND_DATA, 
+        command: COMMAND.APPEND_DATA,
         constData: constDataAppendData(
             VALUE_FORMAT.VALUE_FORMAT_MEMO_HASH,
             VALUE_VALIDATION.VALUE_VALIDATION_NONE, BigInt(0), BigInt(0),
@@ -448,7 +447,7 @@ export function COMMAND_APPEND_DATA_CHAIN_CODE_TOKEN_CODE_PUBLIC_ADDR_SHOW(key: 
         ])
     return {
         ...defaultCommand,
-        command: COMMAND.APPEND_DATA, 
+        command: COMMAND.APPEND_DATA,
         constData: constDataAppendData(
             VALUE_FORMAT.VALUE_FORMAT_CHAIN_CODE_TOKEN_CODE_PUBLIC_ADDR,
             VALUE_VALIDATION.VALUE_VALIDATION_NONE, BigInt(0), BigInt(0),
@@ -472,7 +471,7 @@ export function COMMAND_APPEND_DATA_CHAIN_CODE_CONTRACT_ADDR_TOKEN_TD_SHOW(key: 
         ])
     return {
         ...defaultCommand,
-        command: COMMAND.APPEND_DATA, 
+        command: COMMAND.APPEND_DATA,
         constData: constDataAppendData(
             VALUE_FORMAT.VALUE_FORMAT_CHAIN_CODE_CONTRACT_ADDR_TOKEN_ID,
             VALUE_VALIDATION.VALUE_VALIDATION_NONE, BigInt(0), BigInt(0),
